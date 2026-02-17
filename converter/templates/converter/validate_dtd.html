@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Validation DTD - DataBridge{% endblock %}
+
+{% block content %}
+<style>
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s;
+    }
+    .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        max-width: 500px;
+        width: 90%;
+        animation: slideIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
+    .modal-title { font-size: 24px; font-weight: bold; margin: 0; }
+    .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #999; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
+    .close-btn:hover { color: #333; }
+    .modal-body { margin-bottom: 20px; }
+    .modal-success { color: #155724; background-color: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; }
+    .modal-error { color: #721c24; background-color: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 4px; }
+    .modal-footer { text-align: right; }
+    .btn-close-modal { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .btn-close-modal:hover { background-color: #0056b3; }
+    textarea { width: 100%; min-height: 150px; padding: 10px; font-family: monospace; font-size: 14px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn-primary { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .btn-primary:hover { background-color: #0056b3; }
+</style>
+
+<div class="container">
+    <h1>Validation DTD</h1>
+    <p class="text-muted">Validez vos fichiers XML contre une définition DTD (Document Type Definition)</p>
+
+    <form method="POST" id="validationForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="fileXML">Contenu XML</label>
+            <textarea 
+                id="fileXML" 
+                name="fileXML" 
+                required 
+                placeholder="&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;root&gt;
+  &lt;element&gt;Contenu&lt;/element&gt;
+&lt;/root&gt;"
+            >{{ fileXML|default_if_none:""|escape }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="fileDTD">Définition DTD</label>
+            <textarea 
+                id="fileDTD" 
+                name="fileDTD" 
+                required 
+                placeholder="&lt;!ELEMENT root (element)&gt;
+&lt;!ELEMENT element (#PCDATA)&gt;"
+            >{{ fileDTD|default_if_none:""|escape }}</textarea>
+        </div>
+
+        <div class="button-group">
+            <button type="submit" class="btn-primary">Valider le contenu</button>
+        </div>
+    </form>
+
+    <!-- Modal pour afficher les résultats -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Résultat de validation</h2>
+                <button type="button" class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-close-modal" onclick="closeModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closeModal() {
+            document.getElementById("resultModal").classList.remove("show");
+        }
+
+        document.getElementById("resultModal").addEventListener("click", function(event) {
+            if (event.target === this) closeModal();
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const modal = document.getElementById("resultModal");
+            const modalTitle = document.getElementById("modalTitle");
+            const modalBody = document.getElementById("modalBody");
+
+            {% if validation_result %}
+                {% if is_valid %}
+                    modalTitle.textContent = "✓ Validation réussie";
+                    modalBody.innerHTML = '<div class="modal-success"><strong>Succès!</strong><p>Votre fichier XML est conforme à la DTD fournie.</p></div>';
+                {% else %}
+                    modalTitle.textContent = "✗ Validation échouée";
+                    let errorMsg = "<div class=\"modal-error\"><strong>Erreur!</strong>";
+                    {% if error %}
+                        errorMsg += "<p>{{ error|escapejs }}</p>";
+                    {% endif %}
+                    errorMsg += "</div>";
+                    modalBody.innerHTML = errorMsg;
+                {% endif %}
+                modal.classList.add("show");
+            {% elif error %}
+                modalTitle.textContent = "⚠ Erreur lors du traitement";
+                modalBody.innerHTML = "<div class=\"modal-error\"><p>{{ error|escapejs }}</p></div>";
+                modal.classList.add("show");
+            {% endif %}
+        });
+    </script>
+</div>
+{% endblock %}

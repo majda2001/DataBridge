@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DataBridge - Plateforme professionnelle de validation et conversion XML">
+    <title>{% block title %}DataBridge{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'logo.svg' %}">
+    <link rel="icon" type="image/png" href="{% static 'logo.png' %}">
+
+    <link rel="stylesheet" href="{% static 'style_elegant.css' %}">
+    {% block extra_css %}{% endblock %}
+
+    <style>
+        :root {
+            --brand-primary: #6366f1;
+            --brand-dark: #4f46e5;
+            --brand-light: #e0e7ff;
+            --brand-bg: #f5f3ff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --bg-white: #ffffff;
+            --bg-light: #f9fafb;
+            --bg-lighter: #f3f4f6;
+            --border-light: #e5e7eb;
+            --border-dark: #d1d5db;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.12);
+            --shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: var(--text-primary);
+            background: var(--bg-white);
+            line-height: 1.6;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.98);
+        }
+
+        .navbar {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 2rem;
+        }
+
+        .navbar .title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: color 0.2s ease;
+        }
+
+        .navbar .title:hover { color: var(--brand-primary); }
+        .navbar .logo { width: 36px; height: 36px; flex-shrink: 0; }
+        .navbar ul { display: flex; list-style: none; gap: 2.5rem; align-items: center; }
+        .navbar a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+            padding: 0.5rem 0;
+            border-bottom: 2px solid transparent;
+        }
+        .navbar a:hover { color: var(--brand-primary); }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 1rem; }
+            .navbar ul { gap: 1.5rem; font-size: 0.85rem; }
+        }
+
+        main { min-height: calc(100vh - 180px); max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        footer {
+            background: var(--bg-light);
+            border-top: 1px solid var(--border-light);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <a href="/" class="title">
+                <img src="{% static 'logo.svg' %}" alt="DataBridge Logo" class="logo">
+                <span class="title-text">DataBridge</span>
+            </a>
+        </nav>
+    </header>
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <footer>
+        <p>&copy; 2026 DataBridge • Plateforme de validation et conversion XML</p>
+    </footer>
+</body>
+</html>

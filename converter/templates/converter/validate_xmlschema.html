@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Validation XSD - DataBridge{% endblock %}
+
+{% block content %}
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .modal-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .modal-footer {
+            text-align: right;
+        }
+
+        .btn-close-modal {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-close-modal:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <div class="container">
+        <h1>Validation XSD</h1>
+    <p class="text-muted">Validez vos fichiers XML contre un schéma XSD (XML Schema Definition)</p>
+
+    <form method="POST" id="validationForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="fileXML">Contenu XML</label>
+            <textarea 
+                id="fileXML" 
+                name="fileXML" 
+                required 
+                placeholder="<?xml version=&quot;1.0&quot;?>
+<root xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot;
+      xsi:schemaLocation=&quot;...&quot;>
+  <element>Contenu</element>
+</root>"
+                data-placeholder="Collez votre contenu XML ici...">{{ fileXML }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="fileXMLSchema">Schéma XSD</label>
+            <textarea 
+                id="fileXMLSchema" 
+                name="fileXMLSchema" 
+                required 
+                placeholder="<?xml version=&quot;1.0&quot;?>
+<xs:schema xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;>
+  <xs:element name=&quot;root&quot;>
+    ...
+  </xs:element>
+</xs:schema>"
+                data-placeholder="Collez votre schéma XSD ici...">{{ fileXMLSchema }}</textarea>
+        </div>
+
+        <div class="button-group">
+            <button type="submit" class="btn-primary">Valider le contenu</button>
+        </div>
+    </form>
+
+    <!-- Modal pour afficher les résultats -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Résultat de validation</h2>
+                <button type="button" class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-close-modal" onclick="closeModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('show');
+        }
+
+        // Fermer la modal en cliquant en dehors
+        document.getElementById('resultModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        // Afficher la modal si validation_result est présent
+        {% if validation_result %}
+            document.addEventListener('DOMContentLoaded', function() {
+                const modal = document.getElementById('resultModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+
+                {% if is_valid %}
+                    modalTitle.textContent = '✓ Validation réussie';
+                    modalBody.innerHTML = '<div class="modal-success"><strong>Succès!</strong><p>Votre fichier XML est conforme au schéma XSD fourni.</p></div>';
+                {% else %}
+                    modalTitle.textContent = '✗ Validation échouée';
+                    let errorMsg = '<div class="modal-error"><strong>Erreur!</strong>';
+                    {% if error %}
+                        errorMsg += '<p>{{ error }}</p>';
+                    {% endif %}
+                    errorMsg += '</div>';
+                    modalBody.innerHTML = errorMsg;
+                {% endif %}
+
+                modal.classList.add('show');
+            });
+        {% elif error %}
+            document.addEventListener('DOMContentLoaded', function() {
+                const modal = document.getElementById('resultModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+
+                modalTitle.textContent = '⚠ Erreur lors du traitement';
+                modalBody.innerHTML = '<div class="modal-error"><p>{{ error }}</p></div>';
+
+                modal.classList.add('show');
+            });
+        {% endif %}
+    </script>
+    </div>
+{% endblock %}

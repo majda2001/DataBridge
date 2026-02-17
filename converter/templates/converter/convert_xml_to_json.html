@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Conversion XML vers JSON - DataBridge{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .output-box {
+            background-color: #282c34;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #abb2bf;
+        }
+
+        .output-box pre {
+            color: #abb2bf;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+
+        .output-box code {
+            color: inherit;
+            background: transparent;
+            padding: 0;
+        }
+
+        .modal-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .modal-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .modal-footer {
+            text-align: right;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-close-modal {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-close-modal:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-copy {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-copy:hover {
+            background-color: #218838;
+        }
+    </style>
+
+    <div class="container">
+        <h1>Conversion XML vers JSON</h1>
+    <p class="text-muted">Convertissez facilement vos fichiers XML en format JSON</p>
+
+    <form method="POST" id="conversionForm">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="fileXML">Contenu XML</label>
+            <textarea 
+                id="fileXML" 
+                name="fileXML" 
+                required 
+                placeholder="<?xml version=&quot;1.0&quot;?>
+<root>
+  <user>
+    <name>Jean</name>
+    <email>jean@example.com</email>
+  </user>
+</root>"
+                data-placeholder="Collez votre contenu XML ici...">{{ fileXML }}</textarea>
+        </div>
+
+        <div class="button-group">
+            <button type="submit" class="btn-primary">Convertir en JSON</button>
+        </div>
+    </form>
+
+    <!-- Modal pour afficher les résultats -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Résultat de la conversion</h2>
+                <button type="button" class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn-copy" onclick="copyToClipboard()" style="display: none;" id="copyBtn">📋 Copier le code</button>
+                <button type="button" class="btn-close-modal" onclick="closeModal()">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let jsonContent = '';
+
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('show');
+        }
+
+        function copyToClipboard() {
+            navigator.clipboard.writeText(jsonContent).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copié!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Fermer la modal en cliquant en dehors
+        document.getElementById('resultModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        // Afficher la modal si json_result est présent
+        {% if json_result %}
+            document.addEventListener('DOMContentLoaded', function() {
+                const modal = document.getElementById('resultModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+                const copyBtn = document.getElementById('copyBtn');
+
+                jsonContent = `{{ json_result|escapejs }}`;
+                modalTitle.textContent = '✓ Conversion réussie';
+                
+                // Créer un élément code pour la coloration syntaxique
+                const codeBlock = document.createElement('code');
+                codeBlock.className = 'language-json';
+                codeBlock.textContent = jsonContent;
+                
+                const preBlock = document.createElement('pre');
+                preBlock.className = 'output-box hljs';
+                preBlock.appendChild(codeBlock);
+                
+                const successDiv = document.createElement('div');
+                successDiv.className = 'modal-success';
+                successDiv.innerHTML = '<strong>JSON généré:</strong>';
+                successDiv.appendChild(preBlock);
+                
+                modalBody.innerHTML = '';
+                modalBody.appendChild(successDiv);
+                
+                // Appliquer la coloration syntaxique
+                hljs.highlightElement(codeBlock);
+                copyBtn.style.display = 'inline-block';
+
+                modal.classList.add('show');
+            });
+        {% elif error %}
+            document.addEventListener('DOMContentLoaded', function() {
+                const modal = document.getElementById('resultModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+
+                modalTitle.textContent = '✗ Erreur de conversion';
+                modalBody.innerHTML = '<div class="modal-error"><p>{{ error }}</p></div>';
+
+                modal.classList.add('show');
+            });
+        {% endif %}
+    </script>
+    </div>
+{% endblock %}
