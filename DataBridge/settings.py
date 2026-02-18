@@ -102,7 +102,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-DEBUG = true
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
