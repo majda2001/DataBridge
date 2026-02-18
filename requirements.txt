@@ -5,3 +5,4 @@ lxml==6.0.2
 packaging==26.0
 sqlparse==0.5.5
 xmltodict==1.0.3
+whitenoise==6.4.0
