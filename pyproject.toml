@@ -6,7 +6,8 @@ authors = [
     {name = "majda2001",email = "ablaoui.majda2001@gmail.com"}
 ]
 readme = "README.md"
-requires-python >= "3.12.1"
+requires-python = ">=3.12.1"
+
 dependencies = [
     "django (>=6.0.2,<7.0.0)",
     "lxml (>=6.0.2,<7.0.0)",
